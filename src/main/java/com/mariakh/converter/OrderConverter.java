@@ -3,6 +3,7 @@ package com.mariakh.converter;
 import com.mariakh.exception.ConverterException;
 import com.mariakh.model.Order;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,15 +15,12 @@ import java.util.TimeZone;
 
 public class OrderConverter extends BaseConverter {
 
-    private final InputStream inputStream;
-
-    public OrderConverter(InputStream inputStream) {
+    public OrderConverter(InputStream inputStream) throws IOException {
         super(inputStream);
-        this.inputStream = inputStream;
     }
 
     public Order getOrder() {
-        Map<Short, byte[]> dataMap = getTagsWithData(3);
+        //Map<Short, byte[]> dataMap = getTagsWithData();
         Order order = new Order();
         for (Map.Entry<Short, byte[]> entry : dataMap.entrySet()) {
             byte[] tempBytes = entry.getValue();

@@ -6,20 +6,31 @@ import com.mariakh.model.Item;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ItemConverter extends BaseConverter {
 
-    private final InputStream inputStream;
-
-    public ItemConverter(InputStream inputStream) {
+    public ItemConverter(InputStream inputStream) throws IOException {
         super(inputStream);
-        this.inputStream = inputStream;
     }
 
     public List<Item> getItems() throws IOException {
+        List<Item> itemList = new ArrayList<>();
+        for (byte[] itemBytes : itemsByteArrayList) {
+            Map<Short, byte[]> itemMap = new HashMap<>();
+            for (int i = 0; i < itemBytes.length;) {
+                short tag = getTagOrLength(itemBytes, i);
+                short length = getTagOrLength(itemBytes, i + 2);
+                byte[] dataBuffer = Arrays.copyOfRange(itemBytes, i + 4, i += 4 + length);
+                itemMap.put(tag, dataBuffer);
+            }
+            Item newItem = processOneItem(itemMap);
+            itemList.add(newItem);
+        }
+        return itemList;
+    }
+
+    /*public List<Item> getItems() throws IOException {
         List<Item> items = new ArrayList<>();
         while(inputStream.available() > 0) {
             short tag = getTagOrLength();
@@ -30,7 +41,7 @@ public class ItemConverter extends BaseConverter {
             }
         }
         return items;
-    }
+    }*/
 
     private Item processOneItem(Map<Short, byte[]> itemMap) {
         Item item = new Item();

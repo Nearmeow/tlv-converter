@@ -6,41 +6,40 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class BaseConverter {
 
-    private InputStream inputStream;
+    public Map<Short, byte[]> dataMap;
+    public List<byte[]> itemsByteArrayList = new ArrayList<>();
+    private final byte[] byteArray;
     private static ByteBuffer twoBytesBuffer = ByteBuffer.allocate(2);
     private static ByteBuffer eightBytesBuffer = ByteBuffer.allocate(8);
 
-    public BaseConverter(InputStream inputStream) {
-        this.inputStream = inputStream;
+    public BaseConverter(InputStream inputStream) throws IOException {
+        dataMap = new HashMap<>();
+        byteArray = inputStream.readAllBytes();
+        getTagsWithData();
     }
 
-    public InputStream getInputStream() {
-        return inputStream;
-    }
-
-    public void setInputStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-    }
-
-    protected Map<Short, byte[]> getTagsWithData(int iterationQuantity) {
-        Map<Short, byte[]> dataMap = new HashMap<>();
-        try {
-            for (int i = 0; i < iterationQuantity; i++) {
-                short tag = getTagOrLength();
-                short length = getTagOrLength();
-                byte[] dataBuffer = new byte[length];
-                inputStream.read(dataBuffer);
+    public void getTagsWithData() {
+        for (int i = 0; i < byteArray.length;) {
+            short tag = getTagOrLength(byteArray, i);
+            short length = getTagOrLength(byteArray, i + 2);
+            if (tag != 4) {
+                byte[] dataBuffer = Arrays.copyOfRange(byteArray, i + 4, i += 4 + length);
                 dataMap.put(tag, dataBuffer);
+            } else {
+                itemsByteArrayList.add(Arrays.copyOfRange(byteArray, i + 4, i += 4 + length));
             }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
         }
-        return dataMap;
+    }
+
+    protected short getTagOrLength(byte[] array, int position) {
+        twoBytesBuffer.clear();
+        byte[] buffer = Arrays.copyOfRange(array, position, position + 2);
+        twoBytesBuffer = ByteBuffer.wrap(buffer);
+        return twoBytesBuffer.order(ByteOrder.LITTLE_ENDIAN).getShort();
     }
 
     protected long getLongAndReverseArray(byte[] value) throws ConverterException {
@@ -49,18 +48,6 @@ public class BaseConverter {
         }
         reverseByteArray(value);
         return getLongFromVlnValue(value);
-    }
-
-    protected short getTagOrLength() {
-        byte[] buffer = new byte[2];
-        twoBytesBuffer.clear();
-        try {
-            inputStream.read(buffer);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        twoBytesBuffer = ByteBuffer.wrap(buffer);
-        return twoBytesBuffer.order(ByteOrder.LITTLE_ENDIAN).getShort();
     }
 
     protected long getLongFromVlnValue(byte[] value) {
