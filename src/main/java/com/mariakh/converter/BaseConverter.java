@@ -12,6 +12,7 @@ import java.util.Map;
 public class BaseConverter {
 
     private InputStream inputStream;
+    private String nya;
     private static ByteBuffer twoBytesBuffer = ByteBuffer.allocate(2);
     private static ByteBuffer eightBytesBuffer = ByteBuffer.allocate(8);
 
