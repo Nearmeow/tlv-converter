@@ -3,20 +3,20 @@ package com.mariakh.converter;
 import com.mariakh.exception.ConverterException;
 import com.mariakh.model.Item;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
 
 public class ItemConverter extends BaseConverter {
 
-    public ItemConverter(InputStream inputStream) throws IOException {
-        super(inputStream);
+    private final List<byte[]> itemsData;
+
+    public ItemConverter(List<byte[]> itemsByteArrayList) {
+        this.itemsData = itemsByteArrayList;
     }
 
-    public List<Item> getItems() throws IOException {
+    public List<Item> getItems() throws ConverterException {
         List<Item> itemList = new ArrayList<>();
-        for (byte[] itemBytes : itemsByteArrayList) {
+        for (byte[] itemBytes : itemsData) {
             Map<Short, byte[]> itemMap = new HashMap<>();
             for (int i = 0; i < itemBytes.length;) {
                 short tag = getTagOrLength(itemBytes, i);
@@ -30,47 +30,32 @@ public class ItemConverter extends BaseConverter {
         return itemList;
     }
 
-    /*public List<Item> getItems() throws IOException {
-        List<Item> items = new ArrayList<>();
-        while(inputStream.available() > 0) {
-            short tag = getTagOrLength();
-            short length = getTagOrLength();
-            if (tag == 4) {
-                Map<Short, byte[]> itemMap = getTagsWithData(4);
-                items.add(processOneItem(itemMap));
-            }
-        }
-        return items;
-    }*/
-
-    private Item processOneItem(Map<Short, byte[]> itemMap) {
+    private Item processOneItem(Map<Short, byte[]> itemMap) throws ConverterException {
         Item item = new Item();
         for (Map.Entry<Short, byte[]> entry : itemMap.entrySet()) {
             byte[] value = entry.getValue();
-            try {
-                switch (entry.getKey()) {
-                    case 11:
-                        String name = new String(value, Charset.forName("cp866"));
-                        stringValidation(name, 200);
-                        item.setName(name);
-                        break;
-                    case 12:
-                        validateLongValueForItem(value);
-                        long price = getLongAndReverseArray(value);
-                        item.setPrice(price);
-                        break;
-                    case 13:
-                        double quantity = getDoubleFromFvlnValue(value);
-                        item.setQuantity(quantity);
-                        break;
-                    case 14:
-                        validateLongValueForItem(value);
-                        long sum = getLongAndReverseArray(value);
-                        item.setSum(sum);
-                        break;
-                }
-            } catch (ConverterException e) {
-                System.out.println(e.getMessage());
+            switch (entry.getKey()) {
+                case 11:
+                    String name = new String(value, Charset.forName("cp866"));
+                    stringValidation(name, 200);
+                    item.setName(name);
+                    break;
+                case 12:
+                    validateLongValueForItem(value);
+                    long price = getLongAndReverseArray(value);
+                    item.setPrice(price);
+                    break;
+                case 13:
+                    double quantity = getDoubleFromFvlnValue(value);
+                    item.setQuantity(quantity);
+                    break;
+                case 14:
+                    validateLongValueForItem(value);
+                    long sum = getLongAndReverseArray(value);
+                    item.setSum(sum);
+                    break;
+                default:
+                    throw new ConverterException("Wrong TLV structure. Unknown tag in 'items' field.");
             }
         }
         return item;
@@ -96,7 +81,7 @@ public class ItemConverter extends BaseConverter {
 
     private void validateLongValueForItem(byte[] value) throws ConverterException {
         if (value.length > 6) {
-            throw new ConverterException("Wrong TLV structure");
+            throw new ConverterException("Wrong TLV structure. One of the numeric value in 'items' field is incorrect.");
         }
     }
 }

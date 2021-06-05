@@ -6,11 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class FilePathChecker {
+public class FilePathReader {
 
     private final BufferedReader reader;
 
-    public FilePathChecker(BufferedReader reader) {
+    public FilePathReader(BufferedReader reader) {
         this.reader = reader;
     }
 
@@ -37,7 +37,6 @@ public class FilePathChecker {
             try {
                 String temp = reader.readLine();
                 Path filePath = Paths.get(temp);
-
                 if (filePath.isAbsolute() && Files.isRegularFile(filePath)) {
                     return filePath;
                 } else if (filePath.isAbsolute() && temp.endsWith(".json")) {

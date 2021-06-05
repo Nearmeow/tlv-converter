@@ -3,8 +3,6 @@ package com.mariakh.converter;
 import com.mariakh.exception.ConverterException;
 import com.mariakh.model.Order;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -15,35 +13,32 @@ import java.util.TimeZone;
 
 public class OrderConverter extends BaseConverter {
 
-    public OrderConverter(InputStream inputStream) throws IOException {
-        super(inputStream);
+    private final Map<Short, byte[]> orderData;
+
+    public OrderConverter(Map<Short, byte[]> orderData) {
+        this.orderData = orderData;
     }
 
-    public Order getOrder() {
-        //Map<Short, byte[]> dataMap = getTagsWithData();
+    public Order getOrder() throws ConverterException {
         Order order = new Order();
-        for (Map.Entry<Short, byte[]> entry : dataMap.entrySet()) {
+        for (Map.Entry<Short, byte[]> entry : orderData.entrySet()) {
             byte[] tempBytes = entry.getValue();
-            try {
-                switch (entry.getKey()) {
-                    case 1:
-                        String dateTime = getDateFromBytes(tempBytes);
-                        order.setDateTime(dateTime);
-                        break;
-                    case 2:
-                        long orderNumber = getLongAndReverseArray(tempBytes);
-                        order.setNumber(orderNumber);
-                        break;
-                    case 3:
-                        String customerName = new String(tempBytes, Charset.forName("cp866"));
-                        stringValidation(customerName, 1000);
-                        order.setCustomerName(customerName);
-                        break;
-                    default:
-                        throw new ConverterException("Wrong TLV structure.");
-                }
-            } catch (ConverterException e) {
-                System.out.println(e.getMessage());
+            switch (entry.getKey()) {
+                case 1:
+                    String dateTime = getDateFromBytes(tempBytes);
+                    order.setDateTime(dateTime);
+                    break;
+                case 2:
+                    long orderNumber = getLongAndReverseArray(tempBytes);
+                    order.setNumber(orderNumber);
+                    break;
+                case 3:
+                    String customerName = new String(tempBytes, Charset.forName("cp866"));
+                    stringValidation(customerName, 1000);
+                    order.setCustomerName(customerName);
+                    break;
+                default:
+                    throw new ConverterException("Wrong TLV structure. Unknown tag in order data.");
             }
         }
         return order;
