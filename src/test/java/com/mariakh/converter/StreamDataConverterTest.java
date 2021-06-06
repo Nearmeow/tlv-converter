@@ -1,7 +1,9 @@
 package com.mariakh.converter;
 
+import com.mariakh.exception.ConverterException;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -18,6 +20,8 @@ public class StreamDataConverterTest {
     }
 
     @Test
-    public void getItemsData() {
+    public void getItemsDataTest() {
+        List<byte[]> list = BaseTest.streamDataConverter.getItemsData();
+        assertEquals(2, list.size());
     }
 }
